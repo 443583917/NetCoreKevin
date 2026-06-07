@@ -248,7 +248,9 @@ kevin.abp.core/
 
 ## 📖 文档资源
 
-- **详细文档**: [SYSTEM_DOCUMENTATION.md](SYSTEM_DOCUMENTATION.md)
+- **系统文档**: [SYSTEM_DOCUMENTATION.md](SYSTEM_DOCUMENTATION.md)
+- **项目架构**: [PROJECT_ARCHITECTURE.md](PROJECT_ARCHITECTURE.md)
+- **开发指南**: [docs/development.md](docs/development.md)
 - **教学文档**: [CSDN 专栏](https://blog.csdn.net/weixin_42629287/category_13037923.html)
 - **新项目教程**: [基于 NetCoreKevin 二次开发](https://gitee.com/netkevin-li/ainet)
 
