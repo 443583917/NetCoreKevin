@@ -1,5 +1,15 @@
 # NetCoreKevin 系统开发-运维-使用文档
 
+> **⚠️ 文档已迁移**
+>
+> 本文档内容已迁移到以下文档：
+>
+> - 使用指南：[docs/usage.md](docs/usage.md)
+> - 开发指南：[docs/development.md](docs/development.md)
+> - 运维指南：[docs/operations.md](docs/operations.md)
+>
+> 请参考新文档获取最新信息。
+
 ---
 
 ## 一、项目概述
