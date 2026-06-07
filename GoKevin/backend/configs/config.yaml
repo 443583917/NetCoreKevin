@@ -1,0 +1,46 @@
+server:
+  port: 9901
+  mode: debug
+  readTimeout: 30
+  writeTimeout: 30
+
+database:
+  host: 127.0.0.1
+  port: 3306
+  user: root
+  password: admin123
+  dbname: kevin_app
+  maxIdleConns: 10
+  maxOpenConns: 100
+
+redis:
+  host: 127.0.0.1
+  port: 6379
+  password: "123456"
+  db: 0
+
+jwt:
+  secret: your-secret-key-here
+  expireHour: 24
+
+ai:
+  defaultProvider: openai
+  providers:
+    - name: openai
+      apiKey: ${OPENAI_API_KEY}
+      baseUrl: https://api.openai.com/v1
+      model: gpt-4
+
+rabbitmq:
+  host: 127.0.0.1
+  port: 5672
+  user: guest
+  password: guest
+  vhost: /
+
+log:
+  level: info
+  filename: logs/app.log
+  maxSize: 100
+  maxBackups: 7
+  maxAge: 30

@@ -1,0 +1,325 @@
+<template>
+  <div class="management-container">
+    <a-card class="management-card">
+      <template #title>
+        <div class="card-header">
+          <div class="header-title">
+            <MessageOutlined class="title-icon" />
+            <span>提示词管理</span>
+          </div>
+          <div class="header-actions">
+            <a-input-search
+              class="search-input"
+              placeholder="搜索提示词..."
+              style="width: 250px; margin-right: 16px"
+              @search="onSearch"
+            />
+            <a-button type="primary" class="add-button" @click="showAddPromptModal">
+              <template #icon>
+                <PlusOutlined />
+              </template>
+              添加提示词
+            </a-button>
+          </div>
+        </div>
+      </template>
+
+      <div class="cards-container">
+        <a-row :gutter="[24, 24]">
+          <a-col :xs="24" :sm="12" :md="12" :lg="8" :xl="6" v-for="prompt in promptList" :key="prompt.id">
+            <a-card class="prompt-card" hoverable>
+              <template #title>
+                <div class="card-title">
+                  <span class="prompt-name">{{ prompt.name }}</span>
+                </div>
+              </template>
+              <template #extra>
+                <a-dropdown>
+                  <a class="ant-dropdown-link" @click.prevent>
+                    <EllipsisOutlined />
+                  </a>
+                  <template #overlay>
+                    <a-menu>
+                      <a-menu-item @click="showEditPromptModal(prompt)">
+                        <edit-outlined /> 编辑
+                      </a-menu-item>
+                      <a-menu-item @click="showDeleteConfirm(prompt)">
+                        <delete-outlined /> 删除
+                      </a-menu-item>
+                    </a-menu>
+                  </template>
+                </a-dropdown>
+              </template>
+              <div @click="showEditPromptModal(prompt)" class="card-content">
+                <div class="prompt-info">
+                  <div class="prompt-section horizontal">
+                    <div class="section-label">提示词:</div>
+                    <div class="section-content">{{ prompt.prompt }}</div>
+                  </div>
+                  <div class="prompt-section horizontal">
+                    <div class="section-label">描述:</div>
+                    <div class="section-content">{{ prompt.description }}</div>
+                  </div>
+                  <div class="prompt-section horizontal" v-if="prompt.createUser || prompt.updateUser">
+                    <div class="section-label" v-if="prompt.createUser">创建人:</div>
+                    <div class="section-content" v-if="prompt.createUser">{{ prompt.createUser }}</div>
+                    <div class="section-label" v-if="prompt.updateUser" style="margin-left: 16px;">更新人:</div>
+                    <div class="section-content" v-if="prompt.updateUser">{{ prompt.updateUser }}</div>
+                  </div>
+                </div>
+              </div>
+            </a-card>
+          </a-col>
+        </a-row>
+        
+        <a-empty v-if="promptList.length === 0" description="暂无提示词数据" />
+        
+        <div class="pagination-container" v-if="promptList.length > 0">
+          <a-pagination
+            v-model:current="pagination.current"
+            v-model:page-size="pagination.pageSize"
+            :total="pagination.total"
+            show-size-changer
+            show-quick-jumper
+            :show-total="(total) => `共 ${total} 条记录`"
+            @change="handlePageChange"
+          />
+        </div>
+      </div>
+    </a-card>
+
+    <!-- 添加/编辑提示词模态框 -->
+    <a-modal 
+      v-model:open="promptModalVisible" 
+      :title="promptModalTitle" 
+      @ok="handlePromptModalOk" 
+      @cancel="handlePromptModalCancel"
+      :confirm-loading="confirmLoading"
+      width="600px"
+    >
+      <a-form :model="promptForm" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }">
+        <a-form-item label="名称" v-bind="validateInfos.name">
+          <a-input v-model:value="promptForm.name" placeholder="请输入提示词名称" />
+        </a-form-item>
+        <a-form-item label="提示词" v-bind="validateInfos.prompt">
+          <a-textarea 
+            v-model:value="promptForm.prompt" 
+            :rows="20" 
+            placeholder="请输入提示词"
+            :maxlength="5000"
+            show-count
+          />
+        </a-form-item>
+        <a-form-item label="描述" v-bind="validateInfos.description">
+          <a-textarea 
+            v-model:value="promptForm.description" 
+            :rows="4" 
+            placeholder="请输入描述"
+            :maxlength="500"
+            show-count
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+  </div>
+</template>
+
+<script setup>
+import "../../css/CardTable.css";
+import { ref, reactive, onMounted } from "vue";
+import {
+  MessageOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  EllipsisOutlined,
+} from "@ant-design/icons-vue";
+import { message, Modal } from "ant-design-vue";
+import { Form } from "ant-design-vue";
+import {
+  getAIPromptsPageData,
+  addEditAIPrompts,
+  deleteAIPrompts,
+} from "@/api/ai/aiPrompts";
+
+const useForm = Form.useForm;
+
+// 提示词数据
+const promptList = ref([]);
+
+// 分页配置
+const pagination = reactive({
+  current: 1,
+  pageSize: 8,
+  total: 0,
+});
+
+// 模态框状态
+const promptModalVisible = ref(false);
+const confirmLoading = ref(false);
+const promptModalTitle = ref("添加提示词");
+
+// 当前编辑的提示词
+const currentPrompt = ref(null);
+
+// 提示词表单
+const promptForm = reactive({
+  id: "",
+  name: "",
+  prompt: "",
+  description: "",
+});
+
+// 表单验证规则
+const promptRules = reactive({
+  name: [{ required: true, message: "请输入提示词名称" }],
+  prompt: [
+    { required: true, message: "请输入提示词" },
+    { max: 5000, message: "提示词不能超过5000个字符" },
+  ],
+  description: [
+    { required: true, message: "请输入描述" },
+    { max: 500, message: "描述不能超过500个字符" },
+  ],
+});
+
+// 表单验证
+const { validate: validatePromptForm, validateInfos } = useForm(
+  promptForm,
+  promptRules
+);
+
+// 搜索关键字
+const searchKeyword = ref("");
+
+// 搜索处理
+const onSearch = (value) => {
+  searchKeyword.value = value;
+  pagination.current = 1;
+  loadPromptData();
+};
+
+// 加载提示词数据
+const loadPromptData = async () => {
+  try {
+    const params = {
+      pageNum: pagination.current,
+      pageSize: pagination.pageSize,
+      searchKey: searchKeyword.value,
+    };
+
+    const response = await getAIPromptsPageData(params);
+    if (response && response.code === 200 && response.data.data) {
+      promptList.value = response.data.data.map((item) => ({
+        ...item,
+        key: item.id,
+      }));
+      pagination.total = response.data.total;
+    }
+  } catch (error) {
+    console.error("加载提示词数据失败:", error);
+    message.error("加载提示词数据失败: " + (error.message || "未知错误"));
+  }
+};
+
+// 显示添加提示词模态框
+const showAddPromptModal = () => {
+  promptModalTitle.value = "添加提示词";
+  currentPrompt.value = null;
+  // 重置表单
+  Object.assign(promptForm, {
+    id: "",
+    name: "",
+    prompt: "",
+    description: "",
+  }); 
+  promptModalVisible.value = true;
+};
+
+// 显示编辑提示词模态框
+const showEditPromptModal = (record) => {
+  promptForm.name="我是测试";
+  promptModalTitle.value = '编辑提示词';
+  currentPrompt.value = record; 
+  // 填充表单数据
+  promptForm.id = record.id || '';
+  promptForm.name = record.name || '';
+  promptForm.prompt = record.prompt || '';
+  promptForm.description = record.description || ''; 
+  promptModalVisible.value = true;
+};
+
+// 删除提示词确认
+const showDeleteConfirm = (record) => {
+  Modal.confirm({
+    title: "确认删除",
+    content: `确定要删除提示词"${record.name}"吗？`,
+    okText: "确认",
+    cancelText: "取消",
+    onOk: () => handleDelete(record.id, record.name),
+  });
+};
+
+// 删除提示词
+const handleDelete = async (id, name) => {
+  try {
+    await deleteAIPrompts(id);
+    message.success(`提示词"${name}"删除成功`);
+    loadPromptData(); // 重新加载数据
+  } catch (error) {
+    console.error("删除提示词失败:", error);
+    message.error("删除提示词失败: " + (error.message || "未知错误"));
+  }
+};
+
+// 分页变化处理
+const handlePageChange = (page, pageSize) => {
+  pagination.current = page;
+  pagination.pageSize = pageSize;
+  loadPromptData();
+};
+
+// 提示词模态框确认
+const handlePromptModalOk = () => {
+  validatePromptForm()
+    .then(async () => {
+      confirmLoading.value = true;
+      try {  
+        await addEditAIPrompts(currentPrompt.value? {
+              id: promptForm.id,
+              name: promptForm.name,
+              prompt: promptForm.prompt,
+              description: promptForm.description,
+            }:{
+              name: promptForm.name,
+              prompt: promptForm.prompt,
+              description: promptForm.description,
+            }); 
+        message.success(
+          currentPrompt.value ? "提示词信息更新成功" : "提示词信息添加成功"
+        );
+
+        promptModalVisible.value = false;
+        loadPromptData(); // 重新加载数据
+      } catch (error) {
+        console.error("保存提示词失败:", error);
+        message.error("保存提示词失败: " + (error.message || "未知错误"));
+      } finally {
+        confirmLoading.value = false;
+      }
+    })
+    .catch((err) => {
+      console.log("表单验证失败:", err);
+    });
+};
+
+// 提示词模态框取消
+const handlePromptModalCancel = () => {
+  promptModalVisible.value = false;
+};
+
+// 组件挂载时的初始化
+onMounted(() => { 
+  loadPromptData();
+});
+</script>
