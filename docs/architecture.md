@@ -376,7 +376,7 @@ kevin.FileStorage/
 
 **模块路径：** `Kevin.log4Net`
 
-| 功能 | 说明 | 说明 |
+| 功能 | 说明 | 详情 |
 |------|------|------|
 | **日志记录** | 多级别日志记录 | Info/Warn/Error/Fatal |
 | **日志配置** | 灵活的日志配置 | XML配置文件 |
@@ -399,7 +399,7 @@ kevin.FileStorage/
 
 **模块路径：** `Kevin.Versioning.Swagger`
 
-| 功能 | 说明 | 说明 |
+| 功能 | 说明 | 详情 |
 |------|------|------|
 | **API版本控制** | URL版本管理 | `/api/v1/`, `/api/v2/` |
 | **Swagger文档** | 自动生成API文档 | Swagger UI |
@@ -410,7 +410,7 @@ kevin.FileStorage/
 
 **模块路径：** `kevin.DistributedLock`
 
-| 功能 | 说明 | 说明 |
+| 功能 | 说明 | 详情 |
 |------|------|------|
 | **分布式锁** | Redis分布式锁 | 防止并发冲突 |
 
@@ -420,7 +420,7 @@ kevin.FileStorage/
 
 **模块路径：** `Kevin.SnowflakeId`
 
-| 功能 | 说明 | 说明 |
+| 功能 | 说明 | 详情 |
 |------|------|------|
 | **ID生成** | 分布式唯一ID生成 | 雪花算法 |
 
@@ -440,7 +440,7 @@ kevin.FileStorage/
 
 **模块路径：** `Kevin.Email`
 
-| 功能 | 说明 | 说明 |
+| 功能 | 说明 | 详情 |
 |------|------|------|
 | **邮件发送** | 邮件发送服务 | SMTP |
 
@@ -597,7 +597,7 @@ CREATE TABLE T_Role (
 
 -- 权限表
 CREATE TABLE T_Permission (
-    Id BIGINT PRIMARYKEY,
+    Id BIGINT PRIMARY KEY,
     ParentId BIGINT,
     Name VARCHAR(50),
     Code VARCHAR(100),
